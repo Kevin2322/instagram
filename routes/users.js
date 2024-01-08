@@ -21,6 +21,7 @@ const userSchema = mongoose.Schema({
   name:String,
   email:String,
   profileImage:String,
+  bio:String,
   posts: [{ type: mongoose.Schema.Types.ObjectId, ref: "post"}],
 
 });
