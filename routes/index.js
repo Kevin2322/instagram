@@ -67,13 +67,12 @@ router.post('/login',passport.authenticate("local", {
 
 });
 
-router.post('/logout',function(req,res,next){
-  req.logout(function(err) {
-    if (err) { return next(err); }
+router.post('/logout', function(req, res, next){
+  req.session.destroy(function() {
+    res.clearCookie('connect.sid');
     res.redirect('/');
-  });
-
-})
+});
+});
 
 function isLoggedIn(req,res,next){
   if(req.isAuthenticated())
@@ -101,30 +100,28 @@ function isLoggedIn(req,res,next){
 //   }
 // });
 
-// router.post("/update", upload.single("image"), async function (req, res) {
-//   try {
-//     const result = userModel.updateOne(
-//       { user: req.session.passport?.user },
-//       {
-//           username: req.body.username,
-//           name: req.body.name,
-//           bio: req.body.bio,
-//           profileImage: req.file ? req.file.filename : undefined,
-//       }
-//     );
+router.post("/update", upload.single("image"), async function (req, res) {
+  const user = await userModel.findOne({ username: req.session.passport.user });
+  const { _id } = user;
 
-//     console.log(result);
+  await userModel.updateOne(
+    { _id },
+    {
+      $set: {
+        username: req.body.username,
+        name: req.body.name,
+        bio: req.body.bio,
+      }
+    }
+  );
 
-//     if (result.n === 0) {
-//       return res.status(404).send("User not found");
-//     }
+  if (req.file) {
+    user.profileImage = req.file.filename;
+    await user.save(); 
+  }
 
-//     res.redirect("/profile");
-//   } catch (error) {
-//     console.error("Error updating user:", error);
-//     res.status(500).send("Internal Server Error");
-//   }
-// });
+  res.redirect("/profile");
+});
 
 router.post("/upload",isLoggedIn,upload.single("image"),async function(req,res){
   const user = await userModel.findOne({username: req.session.passport.user})
